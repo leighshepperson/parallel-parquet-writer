@@ -83,24 +83,29 @@ def _chunk_processor(
     total_items = len(chunk)
     successful_count = 0
     failed_count = 0
+    lfs = []
+
     with logging_redirect_tqdm():
         with tqdm(
-            total=total_items, desc=f"Processing Chunk {chunk_index}", unit="create_lf"
-        ) as pbar:
-            lfs = []
-            for create_lf in chunk:
+            total=total_items, desc=f"Processing Chunk {chunk_index} - Get Lazy Frames", unit="get_lazy_frame"
+        ) as lf_pbar:
+            for get_lazy_frame in chunk:
                 try:
-                    lf = create_lf()
+                    lf = get_lazy_frame()
                     lfs.append(lf)
                     successful_count += 1
                 except Exception as e:
                     LOG.exception(f"Error creating lazy frame in chunk {chunk_index}: {e}")
                     failed_count += 1
                 finally:
-                    pbar.update(1)
-                    pbar.set_description(
-                        f"Chunk {chunk_index}: Successful: {successful_count}, Failed: {failed_count}, Total: {total_items}"
+                    lf_pbar.update(1)
+                    lf_pbar.set_description(
+                        f"Processing Chunk {chunk_index} - Fetching Lazy Frames: Successful: {successful_count}, Failed: {failed_count}, Total: {total_items}"
                     )
-        if lfs:
-            output_lfs = pl.concat(lfs)
-            output_lfs.sink_parquet(output_path)
+        with tqdm(
+                total=1, desc=f"Processing Chunk {chunk_index} - Writing Parquet", unit="parquet"
+        ) as parquet_pbar:
+            if lfs:
+                output_lfs = pl.concat(lfs)
+                output_lfs.sink_parquet(output_path)
+                parquet_pbar.update()
