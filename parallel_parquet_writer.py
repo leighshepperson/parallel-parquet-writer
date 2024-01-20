@@ -26,7 +26,7 @@ def parallel_write_parquet(
     base_tmp_path: Path,
     max_workers: int = 4,
     execution_strategy_type: ExecutionStrategyType = ExecutionStrategyType.PROCESS,
-):
+) -> None:
     if len(items) == 0:
         return
 
@@ -62,7 +62,7 @@ def parallel_write_parquet(
 
 def _atomic_write_parquet(
     tmp_path: Path, output_path: Path, temp_suffix: str = ".temp"
-):
+) -> None:
     temp_file_path = output_path.with_suffix(temp_suffix)
 
     try:
@@ -85,16 +85,16 @@ def _chunk_processor(
     failed_count = 0
     with logging_redirect_tqdm():
         with tqdm(
-            total=total_items, desc=f"Processing Chunk {chunk_index}", unit="item"
+            total=total_items, desc=f"Processing Chunk {chunk_index}", unit="create_lf"
         ) as pbar:
             lfs = []
-            for item in chunk:
+            for create_lf in chunk:
                 try:
-                    lf = item()
+                    lf = create_lf()
                     lfs.append(lf)
                     successful_count += 1
                 except Exception as e:
-                    LOG.exception(f"Error processing item in chunk {chunk_index}: {e}")
+                    LOG.exception(f"Error creating lazy frame in chunk {chunk_index}: {e}")
                     failed_count += 1
                 finally:
                     pbar.update(1)
