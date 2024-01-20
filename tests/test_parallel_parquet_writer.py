@@ -24,7 +24,7 @@ def create_lazy_frame(i: int) -> pl.LazyFrame:
     return pl.DataFrame({"data": [i]}).lazy()
 
 
-def failing_lazy_frame() -> None:
+def failing_lazy_frame() -> pl.LazyFrame:
     raise ValueError("Intentional Failure")
 
 
